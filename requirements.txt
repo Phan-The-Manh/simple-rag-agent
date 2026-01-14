@@ -1,0 +1,11 @@
+langchain
+langchain_community
+langchain-core
+langchain_huggingface
+langchain_text_splitters
+sentence_transformers
+pypdf
+torch   
+faiss-cpu
+langchain-openai
+transformers

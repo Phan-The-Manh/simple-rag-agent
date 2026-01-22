@@ -2,7 +2,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTe
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain_community.vectorstores import FAISS 
 from langchain_openai import OpenAIEmbeddings
+from langchain_community.document_loaders import WebBaseLoader
 from dotenv import load_dotenv
+
 load_dotenv()
 
 vector_store_path = "vectorstores/faiss_store"
@@ -64,13 +66,37 @@ def create_db_from_files():
     loader = DirectoryLoader("data", glob="*.pdf", loader_cls=PyPDFLoader)
     doc = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=200,
-        chunk_overlap=40,
+        chunk_size=800,
+        chunk_overlap=200,
     )
     chunks = text_splitter.split_documents(doc)
-    embeddings = HuggingFaceEmbeddings(model="BAAI/bge-base-en-v1.5")
+    print("chunking succesfully")
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
     db = FAISS.from_documents(chunks, embeddings)
     db.save_local(vector_store_path)
+    print("saving succesfully")
     return db
 
-create_db_from_text()
+def create_db_from_web():
+    urls = [
+    "https://lilianweng.github.io/posts/2023-06-23-agent/",
+    "https://lilianweng.github.io/posts/2023-03-15-prompt-engineering/",
+    "https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/",
+    ]
+
+    docs = [WebBaseLoader(url).load() for url in urls]
+    docs_list = [item for sublist in docs for item in sublist]
+
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=500, chunk_overlap=100
+    )
+    doc_splits = text_splitter.split_documents(docs_list)
+    print("chunking succesfully")
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    db = FAISS.from_documents(doc_splits, embeddings)
+    db.save_local(vector_store_path)
+    print("saving succesfully")
+    return db
+
+create_db_from_web()
+
